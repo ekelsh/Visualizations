@@ -1,0 +1,173 @@
+#Basic Visualizations
+
+library(caret)
+library(lattice)
+library(ggplot2)
+library(tibble)
+library(magrittr)
+library(dplyr)
+library(tidyr)
+library(e1071)
+library(psych)
+library(Hmisc)
+
+#To Reset Graphics
+dev.off()
+
+#Stripcharts - Simple Analysis of Spread
+stripchart(TBRays$attendance, xlab = "attendance spread")
+      #plots ties covering each other...used to display distinct values
+stripchart(TBRays$attendance, method="jitter", xlab = "attendance spread")
+      #adds some noise to the data in the y direction
+stripchart(TBRays$attendance, method="stack", xlab = "attendance spread")
+      #plots repeated values stacked on top of one another
+
+#Dot Chart - Simple Analysis of Spread/Frequency
+dotchart(TBRays$attendance, ylab = "Frequency", xlab = "Attendance")
+dotchart(TBRays$is_bobblehead, ylab = "Frequency", xlab = "Bobblehead?")
+
+#Histograms - Simple Analysis of Distribution 
+hist(TBRays$opposing_team, main = "Frequency of Opposing Team Matchups",
+     xlab = "Opposing Team", ylab = "# of Matchups",
+     col = "violet", labels = T)
+
+hist(TBRays$attendance,
+     col = "seagreen2", #or col = colors() [69]
+     main = "Attendance Distribution \n TBRays 2018",    
+     xlab = "Attendance",
+     labels = TRUE)  
+
+hist(TBRays$opposing_team, freq=FALSE)
+hist(TBRays$attendance, breaks = 50)
+
+#Frequency Charts (for categorical variables)
+Team.Freq <- table(TBRays$opposing_team)
+
+barplot(Team.Freq)
+barplot(Team.Freq[order(Team.Freq, decreasing = T)])
+barplot(Team.Freq,
+        horizontal = T,     
+        border = NA,                                    
+        col = colors() [69],  #or col = "cyan"
+        xlim = c(0,30),                                  
+        main = "Team Frequency Chart \n Elena Kelsh",    
+        xlab = "Team")  
+
+#or
+
+bobble.split <- split(TBRays$attendance,      
+                      TBRays$is_bobblehead) 
+          #QUANT variable 1st, CATEGORY variable 2nd
+boxplot(bobble.split, 
+        col = "lavender")
+bobble.split.mean <- sapply(bobble.split, mean)    
+          #gets mean of split file
+barplot(bobble.split.mean,                      
+        col = "red",
+        main = "Attendance by Bobblehead GA",
+        xlab = "Weekend or Weekday")
+
+describeBy(TBRays$attendance, 
+           TBRays$is_bobblehead)
+
+
+#Pie Charts
+table(TBRays$weekend) %>% prop.table()
+table(TBRays$opposing_team) %>% prop.table()
+
+pie(table(TBRays$weekend) %>% prop.table(), col = c("green", "violetred"))
+pie(table(TBRays$opposing_team) %>% prop.table())
+
+          #colors = pruple, cyan, violetred1, green3, white, cornsilk, rainbow, seagreen, seafoam, turquoise
+          #colors = red, orange, dodger blue, black, gold, violet, salmon, coral, yellow, tan, brown, green
+
+
+#Boxplots - Simple Analysis of Spread
+boxplot(TBRays$attendance, depth=FALSE)   #graphical representation of the 5 num sum
+boxplot.stats(TBRays$attendance)
+
+bwplot(~attendance, data=TBRays, main = "Attendance Distribution",
+       xlab = "Attendance", col = "red", auto.key = T)
+bwplot(~attendance | weekend, data=TBRays, main = "Attendance Spread by Weekend",
+       auto.key = T, col = "dodger blue")
+bwplot(~attendance | opposing_team, data=TBRays, 
+       main = "Attendance Spread by Team", auto.key = T)
+
+boxplot(TBRays$attendance,
+        col = colors () [44],    #or col = "blue"
+        notch = T,               #creates a CI of sorts for the median/mean
+        horizontal = T,          #flips the boxplot to read horizontally
+        main = "Attendnace \n TB 2018", 
+        xlab = "Att")
+
+
+#Scatterplots w/ points and w/ lines
+plot(TBRays$home_win_pct, TBRays$attendance, type ="p", pch = 11,
+     main = "Att as FXN of Home Win %", col = "pink",
+     xlab = "Home Win %", ylab = "Attendance")
+abline(lm(TBRays$attendance ~ TBRays$home_win_pct))
+line(lowess(TBRays$home_win_pct,TBRays$attendance))
+
+plot(TBRays$home_win_pct, TBRays$attendance, type ="h")
+abline(lm(TBRays$attendance ~ TBRays$home_win_pct))
+line(lowess(TBRays$home_win_pct,TBRays$attendance))
+
+xyplot(attendance ~ home_win_pct, data=TBRays, 
+       group=TBRays$opposing_team, auto.key = T,
+       main = "HWP vs Att by Team",
+       xlab = "Home Win %", ylab = "Attendance")
+
+xyplot(attendance ~ home_win_pct | weekend, data=TBRays,
+       col = "dodger blue", main = "Att as FXN of HWP by Weekend")
+
+xyplot(attendance ~ home_win_pct + away_win_pct, data=TBRays,
+       main = "Att as FXN of Home + Away Win %", col = "red")
+
+featurePlot(x=TBRays$home_win_pct, y=TBRays$attendance,
+            main = "Home Win % vs Attendance")
+
+#...correlation coefficient
+cor.test(TBRays$attendance, TBRays$home_win_pct)
+rcorr(as.matrix(TBRays))
+
+
+#Scatter Plot Matrix
+splom( ~ cbind(attendance, home_win_pct, away_win_pct), data=TBRays,
+       col = "seagreen", main = "Scatter Plot Matrix for Attendance")
+
+coplot(attendance ~ away_win_pct | is_bobblehead, data = TBRays)
+
+
+featurePlot(x = TBRays[, c("home_win_pct", "away_win_pct")], 
+            y = TBRays$attendance, plot = "pairs")
+          #x can only be numeric predictions
+          #y is the response variable
+          #plot = "density" "box" "strip" "pairs" "ellipse" for classification
+          #plot = "pairs" "scatter" for regression
+          #pch = specifies plot character used for bottom of plot (a number)
+
+pairs(~TBRays$attendance + 
+        TBRays$home_win_pct +         
+        TBRays$away_win_pct +
+        TBRays$weekend)
+
+pairs(TBRays)                  #all variables in table MUST BE QUANT
+pairs(TBRays[c(1, 2, 5, 6)])
+
+pairs.panels(TBRays, gap=0)
+pairs.panels(TBRays[c(1, 2, 5, 6)], gap = 0)
+
+#Plotting ML Algorithms
+plot(attendance ~ ., data=AttData1)
+plot(lm.model)
+
+
+#Chi Square Distribution  
+curve(dchisq(x, df = 3), from = 0, to = 20, ylab = "y")
+      #draws the curve of a chi-square distribution 
+      #df of 3, x range of 0-20
+
+
+
+
+
