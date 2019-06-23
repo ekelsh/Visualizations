@@ -1,0 +1,109 @@
+#Advanced Visualizations
+
+library(vcd)
+library(caret)
+library(lattice)
+library(ggplot2)
+library(tibble)
+library(magrittr)
+library(dplyr)
+library(tidyr)
+library(e1071)
+library(arm)
+
+#To Reset Graphics
+dev.off()
+
+#Crosstabs/Categorical Visualizations
+att.bobble.week <- xtabs(attendance ~ is_bobblehead + weekend, data = TBRays)
+print(att.bobble.week)
+
+barplot(att.bobble.week, beside=TRUE, legend=TRUE)   
+
+assoc(att.bobble.week, shade=TRUE)
+
+
+#Correlation Matrix/Plot
+cor(TBRays[, sapply(TBRays, is.numeric)])
+
+corrplot(cor(TBRays[, sapply(TBRays, is.numeric)]))
+
+#REALLY Pretty Correlation Matrix Visualization (lets us look at multicolliniarity)
+TBRays %>%
+  filter(opposing_team == "10") %>%
+  select_if(is.numeric) %>%
+  cor() %>%
+  corrplot::corrplot()
+
+TBRays %>%
+  select_if(is.numeric) %>%
+  cor() %>%
+  corrplot::corrplot()
+
+#GGPLOT!!!
+ggplot(TBRays, aes(home_win_pct, attendance)) + 
+  geom_point(color='plum1') + 
+  ggtitle('Attendance vs Home WIn % \n TBRays 2018') + 
+  xlab('Home Win %') + ylab('TB Attendance') + 
+  theme_bw() +
+  geom_abline(method='lm', formula= attendance ~ home_win_pct,
+              data = TBRays, color= 'seagreen2', size=1)
+
+ggplot(TBRays, 
+       aes(is_bobblehead, attendance, group=is_bobblehead)) +
+  geom_point(color='seagreen2') +
+  geom_boxplot() +
+  theme_light()
+  
+
+#GGPlot Scatterplots
+ggplot(data=TBRays, aes(y = attendance, x = home_win_pct)) + 
+  geom_hex(bins=50) + #geom_line(data = TBRays, colour="seagreen2") +
+  theme_grey() +
+  labs(title = "Home Win % vs Attendance",
+                           x = "HWP", y ="Attendance")
+
+#GGPlot Box Plot
+ggplot(TBRays, aes(opposing_team, attendance, group=opposing_team)) + 
+  geom_boxplot() + theme_grey() +
+  geom_point(colour = "blue") + labs(title = "Opp Team vs Attendance",
+                                     x = "Team", y ="Attendance")
+
+#GGPlot Histograms
+ggplot(data=TBRays, aes(x = attendance)) + theme_bw() +
+  geom_histogram(binwidth = 1000) + labs(title = "Att Histogram",
+                                         x = "Attendance", y ="Frequency")
+
+#GGPlot for Non Linear Factors (log (x) or sqrt(x) or etx)
+
+ggplot(TBRays, aes(attendance, temp)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = TBRays$attendance ~ TBRays$temp + I(TBRays$temp^2)) +
+  labs(title = "Title",
+         x = "X", y ="Y")
+
+#Cool Normality Plots
+TBRays %>% 
+  select(attendance, home_win_pct, away_win_pct, weekend, is_bobblehead, temp) %>% 
+  gather(metric, value) %>% 
+  ggplot(aes(value, fill = metric)) + 
+  geom_density(show.legend = FALSE) + 
+  facet_wrap(~ metric, scales = "free") +
+  labs(title = "Normality Plots",
+       y ="Attendance")
+
+TBRays %>% 
+  gather(metric, value) %>% 
+  ggplot(aes(value, fill = metric)) + 
+  geom_density(show.legend = FALSE) + 
+  facet_wrap(~ metric, scales = "free") +
+  labs(title = "Normality Plots")
+
+
+#Mosaic Plots [takes a LONG time]
+mosaicplot(~ attendance + is_bobblehead + weekend, data=TBRays,
+           shake = TRUE)
+
+
+
+
